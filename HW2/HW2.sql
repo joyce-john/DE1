@@ -13,5 +13,5 @@ SELECT DISTINCT cost FROM birdstrikes ORDER BY cost DESC LIMIT 49,1;
 -- it's an empty string
 SELECT state FROM birdstrikes WHERE state IS NOT NULL AND bird_size IS NOT NULL LIMIT 1,1;
 
--- Exercise 5:
-
+-- Exercise 5: 7580 days
+SELECT DATEDIFF(NOW(), flight_date) FROM birdstrikes AS days_elapsed WHERE state = "Colorado" AND WEEKOFYEAR(flight_date) = 52;
