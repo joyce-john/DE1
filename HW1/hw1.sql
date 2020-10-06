@@ -1,8 +1,16 @@
+-- This script creates 3 tables and loads data into them from my personal computer.
+
+-- use local loading because it works for some reason
+SET GLOBAL local_infile = ON;
+
+-- create and use the schema
 CREATE SCHEMA airbnb;
 USE airbnb;
 
+-- loading listings, which has 92 columns
+-- linking vars: id
 CREATE TABLE listings
-(id BIGINT,
+(id INT,
 listing_url VARCHAR(255),
 scrape_id BIGINT,
 last_scraped DATE,
@@ -95,15 +103,8 @@ require_guest_phone_verification VARCHAR(1),
 calculated_host_listings_count INT,
 reviews_per_month DOUBLE);
 
--- using these commands temporarily
-DROP TABLE listings;
-SHOW VARIABLES LIKE "secure_file_priv";
-SELECT * FROM airbnb.listings;
-SELECT summary FROM airbnb.listings LIMIT 2,1;
-DROP TABLE airbnb.calendar;
-describe airbnb.calendar;
 
-SET GLOBAL local_infile = ON;
+-- load data into listings table
 LOAD DATA LOCAL INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\listings.csv'
 INTO TABLE listings
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
@@ -112,7 +113,8 @@ IGNORE 1 LINES
 (id,listing_url,scrape_id,last_scraped,name,summary,space,description,experiences_offered,neighborhood_overview,notes,transit,thumbnail_url,medium_url,picture_url,xl_picture_url,host_id,host_url,host_name,host_since,host_location,host_about,host_response_time,host_response_rate,host_acceptance_rate,host_is_superhost,host_thumbnail_url,host_picture_url,host_neighbourhood,host_listings_count,host_total_listings_count,host_verifications,host_has_profile_pic,host_identity_verified,street,neighbourhood,neighbourhood_cleansed,neighbourhood_group_cleansed,city,state,zipcode,market,smart_location,country_code,country,latitude,longitude,is_location_exact,property_type,room_type,accommodates,bathrooms,bedrooms,beds,bed_type,amenities,square_feet,price,weekly_price,monthly_price,security_deposit,cleaning_fee,guests_included,extra_people,minimum_nights,maximum_nights,calendar_updated,has_availability,availability_30,availability_60,availability_90,availability_365,calendar_last_scraped,number_of_reviews,first_review,last_review,review_scores_rating,review_scores_accuracy,review_scores_cleanliness,review_scores_checkin,review_scores_communication,review_scores_location,review_scores_value,requires_license,license,jurisdiction_names,instant_bookable,cancellation_policy,require_guest_profile_picture,require_guest_phone_verification,calculated_host_listings_count,reviews_per_month
 );
 
-
+-- create reviews table
+-- linking vars: listing_id, id
 CREATE TABLE reviews
 (listing_id INT,
 id INT,
@@ -121,6 +123,7 @@ reviewer_id INT,
 reviewer_name VARCHAR(255),
 comments TEXT);
 
+-- load reviews data into table
 LOAD DATA LOCAL INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\reviews.csv'
 INTO TABLE reviews
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
@@ -128,12 +131,15 @@ LINES TERMINATED BY '\n'
 IGNORE 1 LINES
 (listing_id,id,date,reviewer_id,reviewer_name,comments);
 
+-- create calendar table
+-- linking vars: listing_id
 CREATE TABLE calendar
 (listing_id INT,
 date DATE,
 available VARCHAR(1),
 price VARCHAR(255));
 
+-- load data into calendar table
 LOAD DATA LOCAL INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\calendar.csv'
 INTO TABLE calendar
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
