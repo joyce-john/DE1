@@ -46,7 +46,7 @@ DELIMITER $$
 
 CREATE PROCEDURE GetCategory(
 	IN entry INT,
-	OUT category VARCHAR(25)
+	OUT category VARCHAR(4)
 	)
 
 BEGIN
