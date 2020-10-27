@@ -1,13 +1,14 @@
 -- create and use the schema
 DROP SCHEMA IF EXISTS airbnb;
-
 CREATE SCHEMA airbnb;
 USE airbnb;
 
--- loading listings, which has 92 columns
--- linking vars: id
+-- create schema for listings, which has 92 columns
+-- primary key: id
 DROP TABLE IF EXISTS listings;
 
+-- columns marked with a * require a SET COLUMN = NULLIF(@VAR = '') statement + a @v_column variable import...
+-- ...during the LOAD DATA IN FILE call
 CREATE TABLE listings
 (id INT,
 listing_url VARCHAR(255),
@@ -28,7 +29,7 @@ xl_picture_url TEXT,
 host_id BIGINT,
 host_url TEXT,
 host_name VARCHAR(255),
-host_since VARCHAR(255), -- due to missing values, preferred data type DATE
+host_since DATE, -- *
 host_location VARCHAR(255),
 host_about TEXT,
 host_response_time VARCHAR(255),
@@ -38,8 +39,8 @@ host_is_superhost VARCHAR(1),
 host_thumbnail_url TEXT,
 host_picture_url TEXT,
 host_neighbourhood VARCHAR(255),
-host_listings_count VARCHAR(255), -- due to missing values, preferred data type INT
-host_total_listings_count VARCHAR(255), -- due to missing values, preferred data type INT
+host_listings_count INT, 
+host_total_listings_count INT, 
 host_verifications TEXT,
 host_has_profile_pic VARCHAR(1),
 host_identity_verified VARCHAR(1),
@@ -60,9 +61,9 @@ is_location_exact VARCHAR(1),
 property_type VARCHAR(255),
 room_type VARCHAR(255),
 accommodates INT,
-bathrooms VARCHAR(255), -- due to missing values, use DOUBLE later to allow for values like 3.5
-bedrooms VARCHAR(255), -- due to missing values, preferred data type INT
-beds VARCHAR(255), -- due to missing values, preferred data type INT
+bathrooms DOUBLE, -- DOUBLE later to allow for values like 3.5 *
+bedrooms INT, -- *
+beds INT, -- *
 bed_type VARCHAR(255),
 amenities TEXT,
 square_feet VARCHAR(255), -- VARCHAR accomodates $ sign
@@ -83,15 +84,15 @@ availability_90 INT,
 availability_365 INT,
 calendar_last_scraped DATE,
 number_of_reviews INT,
-first_review VARCHAR(255), -- due to missing values, preferred data type DATE
-last_review VARCHAR(255),  -- due to missing values, preferred data type DATE
-review_scores_rating VARCHAR(255), -- due to missing values, preferred data type INT
-review_scores_accuracy VARCHAR(255), -- due to missing values, preferred data type INT
-review_scores_cleanliness VARCHAR(255), -- due to missing values, preferred data type INT
-review_scores_checkin VARCHAR(255), -- due to missing values, preferred data type INT
-review_scores_communication VARCHAR(255), -- due to missing values, preferred data type INT
-review_scores_location VARCHAR(255), -- due to missing values, preferred data type INT
-review_scores_value VARCHAR(255), -- due to missing values, preferred data type INT
+first_review DATE, -- *
+last_review DATE,  -- *
+review_scores_rating INT, -- *
+review_scores_accuracy INT, -- *
+review_scores_cleanliness INT, -- *
+review_scores_checkin INT, -- *
+review_scores_communication INT, -- *
+review_scores_location INT, -- *
+review_scores_value INT, -- *
 requires_license VARCHAR(1),
 license VARCHAR(255),
 jurisdiction_names VARCHAR(255),
@@ -100,7 +101,7 @@ cancellation_policy VARCHAR(255),
 require_guest_profile_picture VARCHAR(1),
 require_guest_phone_verification VARCHAR(1),
 calculated_host_listings_count INT,
-reviews_per_month VARCHAR(255)); -- due to missing values, preferred data type DOUBLE
+reviews_per_month DOUBLE); -- *
 
 
 -- load data into listings table
@@ -109,8 +110,26 @@ INTO TABLE listings
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES
-(id,listing_url,scrape_id,last_scraped,name,summary,space,description,experiences_offered,neighborhood_overview,notes,transit,thumbnail_url,medium_url,picture_url,xl_picture_url,host_id,host_url,host_name,host_since,host_location,host_about,host_response_time,host_response_rate,host_acceptance_rate,host_is_superhost,host_thumbnail_url,host_picture_url,host_neighbourhood,host_listings_count,host_total_listings_count,host_verifications,host_has_profile_pic,host_identity_verified,street,neighbourhood,neighbourhood_cleansed,neighbourhood_group_cleansed,city,state,zipcode,market,smart_location,country_code,country,latitude,longitude,is_location_exact,property_type,room_type,accommodates,bathrooms,bedrooms,beds,bed_type,amenities,square_feet,price,weekly_price,monthly_price,security_deposit,cleaning_fee,guests_included,extra_people,minimum_nights,maximum_nights,calendar_updated,has_availability,availability_30,availability_60,availability_90,availability_365,calendar_last_scraped,number_of_reviews,first_review,last_review,review_scores_rating,review_scores_accuracy,review_scores_cleanliness,review_scores_checkin,review_scores_communication,review_scores_location,review_scores_value,requires_license,license,jurisdiction_names,instant_bookable,cancellation_policy,require_guest_profile_picture,require_guest_phone_verification,calculated_host_listings_count,reviews_per_month
-);
+(id,listing_url,scrape_id,last_scraped,name,summary,space,description,experiences_offered,neighborhood_overview,notes,transit,thumbnail_url,medium_url,picture_url,xl_picture_url,host_id,host_url,host_name,@v_host_since,host_location,host_about,host_response_time,host_response_rate,host_acceptance_rate,host_is_superhost,host_thumbnail_url,host_picture_url,host_neighbourhood,@v_host_listings_count,@v_host_total_listings_count,host_verifications,host_has_profile_pic,host_identity_verified,street,neighbourhood,neighbourhood_cleansed,neighbourhood_group_cleansed,city,state,zipcode,market,smart_location,country_code,country,latitude,longitude,is_location_exact,property_type,room_type,accommodates,@v_bathrooms,@v_bedrooms,@v_beds,bed_type,amenities,square_feet,price,weekly_price,monthly_price,security_deposit,cleaning_fee,guests_included,extra_people,minimum_nights,maximum_nights,calendar_updated,has_availability,availability_30,availability_60,availability_90,availability_365,calendar_last_scraped,number_of_reviews,@v_first_review,@v_last_review,@v_review_scores_rating,@v_review_scores_accuracy,@v_review_scores_cleanliness,@v_review_scores_checkin,@v_review_scores_communication,@v_review_scores_location,@v_review_scores_value,requires_license,license,jurisdiction_names,instant_bookable,cancellation_policy,require_guest_profile_picture,require_guest_phone_verification,calculated_host_listings_count,@v_reviews_per_month
+)
+SET 
+host_since = NULLIF(@v_host_since, ''),
+host_listings_count = NULLIF(@v_host_listings_count, ''),
+host_total_listings_count = NULLIF(@v_host_total_listings_count, ''),
+bathrooms = NULLIF(@v_bathrooms, ''),
+bedrooms = NULLIF(@v_bedrooms, ''),
+beds = NULLIF(@v_beds, ''),
+first_review = NULLIF(@v_first_review, ''),
+last_review = NULLIF(@v_last_review, ''),
+review_scores_rating = NULLIF(@v_review_scores_rating, ''),
+review_scores_accuracy = NULLIF(@v_review_scores_accuracy, ''),
+review_scores_cleanliness = NULLIF(@v_review_scores_cleanliness, ''),
+review_scores_checkin = NULLIF(@v_review_scores_checkin, ''),
+review_scores_communication = NULLIF(@v_review_scores_communication, ''),
+review_scores_location = NULLIF(@v_review_scores_location, ''),
+review_scores_value = NULLIF(@v_review_scores_value, ''),
+reviews_per_month = NULLIF(@v_reviews_per_month, '')
+;
 
 -- create reviews table
 -- linking vars: listing_id, id
@@ -151,11 +170,3 @@ IGNORE 1 LINES
 (listing_id,date,available,price);
 
 SHOW TABLES;
-
--- maybe I can use this to transform these back into the ideal data type?
--- something like:
--- SET VAR = CAST(VAR AS DOUBLE)
--- IF VAR = 0 THEN SET VAR = NULL
--- so... load the data into a staging table, load from that table into the real table, CASTing everything that needs to be changed
--- than drop the staging table
-SELECT CAST(reviews_per_month AS DOUBLE) FROM listings LIMIT 20;
