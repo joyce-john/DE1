@@ -66,14 +66,14 @@ bedrooms INT, -- *
 beds INT, -- *
 bed_type VARCHAR(255),
 amenities TEXT,
-square_feet VARCHAR(255), -- VARCHAR accomodates entries which have the string "NA"
-price VARCHAR(255), -- VARCHAR accomodates $ sign
-weekly_price DOUBLE,
-monthly_price VARCHAR(255),
-security_deposit VARCHAR(255),
-cleaning_fee VARCHAR(255),
+square_feet INT, -- *
+price DECIMAL(10,2), -- *
+weekly_price DECIMAL(10,2), -- *
+monthly_price DECIMAL(10,2), -- *
+security_deposit DECIMAL(10,2), -- *
+cleaning_fee DECIMAL(10,2), -- *
 guests_included INT,
-extra_people VARCHAR(255),
+extra_people DECIMAL(10,2), -- *
 minimum_nights INT,
 maximum_nights INT,
 calendar_updated VARCHAR(255),
@@ -103,14 +103,15 @@ require_guest_phone_verification VARCHAR(1),
 calculated_host_listings_count INT,
 reviews_per_month DECIMAL(10,2)); -- *
 
-truncate listings;
+
 -- load data into listings table
+-- for PRICE columns, the logic works like this: IF it is a missing value, THEN NULL, ELSE use SUBSTRING to truncate the "$", and REPLACE TO remove any commas, and CAST to decimal
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\listings.csv'
 INTO TABLE listings
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES
-(id,listing_url,scrape_id,last_scraped,name,summary,space,description,experiences_offered,neighborhood_overview,notes,transit,thumbnail_url,medium_url,picture_url,xl_picture_url,host_id,host_url,host_name,@v_host_since,host_location,host_about,host_response_time,host_response_rate,host_acceptance_rate,host_is_superhost,host_thumbnail_url,host_picture_url,host_neighbourhood,@v_host_listings_count,@v_host_total_listings_count,host_verifications,host_has_profile_pic,host_identity_verified,street,neighbourhood,neighbourhood_cleansed,neighbourhood_group_cleansed,city,state,zipcode,market,smart_location,country_code,country,latitude,longitude,is_location_exact,property_type,room_type,accommodates,@v_bathrooms,@v_bedrooms,@v_beds,bed_type,amenities,square_feet,price,@v_weekly_price,monthly_price,security_deposit,cleaning_fee,guests_included,extra_people,minimum_nights,maximum_nights,calendar_updated,has_availability,availability_30,availability_60,availability_90,availability_365,calendar_last_scraped,number_of_reviews,@v_first_review,@v_last_review,@v_review_scores_rating,@v_review_scores_accuracy,@v_review_scores_cleanliness,@v_review_scores_checkin,@v_review_scores_communication,@v_review_scores_location,@v_review_scores_value,requires_license,license,jurisdiction_names,instant_bookable,cancellation_policy,require_guest_profile_picture,require_guest_phone_verification,calculated_host_listings_count,@v_reviews_per_month
+(id,listing_url,scrape_id,last_scraped,name,summary,space,description,experiences_offered,neighborhood_overview,notes,transit,thumbnail_url,medium_url,picture_url,xl_picture_url,host_id,host_url,host_name,@v_host_since,host_location,host_about,host_response_time,host_response_rate,host_acceptance_rate,host_is_superhost,host_thumbnail_url,host_picture_url,host_neighbourhood,@v_host_listings_count,@v_host_total_listings_count,host_verifications,host_has_profile_pic,host_identity_verified,street,neighbourhood,neighbourhood_cleansed,neighbourhood_group_cleansed,city,state,zipcode,market,smart_location,country_code,country,latitude,longitude,is_location_exact,property_type,room_type,accommodates,@v_bathrooms,@v_bedrooms,@v_beds,bed_type,amenities,@v_square_feet,@v_price,@v_weekly_price,@v_monthly_price,@v_security_deposit,@v_cleaning_fee,guests_included,@v_extra_people,minimum_nights,maximum_nights,calendar_updated,has_availability,availability_30,availability_60,availability_90,availability_365,calendar_last_scraped,number_of_reviews,@v_first_review,@v_last_review,@v_review_scores_rating,@v_review_scores_accuracy,@v_review_scores_cleanliness,@v_review_scores_checkin,@v_review_scores_communication,@v_review_scores_location,@v_review_scores_value,requires_license,license,jurisdiction_names,instant_bookable,cancellation_policy,require_guest_profile_picture,require_guest_phone_verification,calculated_host_listings_count,@v_reviews_per_month
 )
 SET 
 host_since = NULLIF(@v_host_since, ''),
@@ -119,9 +120,13 @@ host_total_listings_count = NULLIF(@v_host_total_listings_count, ''),
 bathrooms = NULLIF(@v_bathrooms, ''),
 bedrooms = NULLIF(@v_bedrooms, ''),
 beds = NULLIF(@v_beds, ''),
-
-weekly_price = IF(@v_weekly_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_weekly_price, 2), ",", "") AS DECIMAL(10,2) )),
-
+square_feet = NULLIF(@v_square_feet, ''),
+price = IF(@v_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_price, 2), ",", "") AS DECIMAL(10,2))), 
+weekly_price = IF(@v_weekly_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_weekly_price, 2), ",", "") AS DECIMAL(10,2))),
+monthly_price = IF(@v_monthly_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_monthly_price, 2), ",", "") AS DECIMAL(10,2))),
+security_deposit = IF(@v_security_deposit = '', NULL,  CAST(REPLACE(SUBSTRING(@v_security_deposit, 2), ",", "") AS DECIMAL(10,2))),
+cleaning_fee = IF(@v_cleaning_fee = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cleaning_fee, 2), ",", "") AS DECIMAL(10,2))),
+extra_people = IF(@v_extra_people = '', NULL,  CAST(REPLACE(SUBSTRING(@v_extra_people, 2), ",", "") AS DECIMAL(10,2))),
 first_review = NULLIF(@v_first_review, ''),
 last_review = NULLIF(@v_last_review, ''),
 review_scores_rating = NULLIF(@v_review_scores_rating, ''),
@@ -134,7 +139,6 @@ review_scores_value = NULLIF(@v_review_scores_value, ''),
 reviews_per_month = NULLIF(@v_reviews_per_month, '')
 ;
 
-SELECT weekly_price FROM listings;
 
 -- create reviews table
 -- linking vars: listing_id, id
@@ -164,14 +168,15 @@ CREATE TABLE calendar
 (listing_id INT,
 date DATE,
 available VARCHAR(1),
-price VARCHAR(255));
+price DECIMAL(10,2));
 
--- load data into calendar table
+-- load data into calendar table, this could take a little while (20 seconds on my laptop)
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\calendar.csv'
 INTO TABLE calendar
-FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES
-(listing_id,date,available,price);
+(listing_id,date,available,@v_cal_price)
+SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2), ",", "") AS DECIMAL(10,2)));
 
 SHOW TABLES;
