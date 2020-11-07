@@ -185,5 +185,14 @@ SHOW TABLES;
 -- ###########			E T L 		 ##################
 -- ####################################################
 
--- this is a prototype for average availability and average price from calendar
-SELECT listing_id, (SUM(available = 't')/COUNT(available)) AS avg_availability, SUM(price)/COUNT(price) AS avg_price FROM calendar GROUP BY listing_id;
+DROP TABLE IF EXISTS property_stats;
+
+-- this SELECT returns the columns which are good for analytics from listings
+SELECT id, name, host_is_superhost, neighbourhood_cleansed, neighbourhood_group_cleansed, property_type, room_type, accommodates, bathrooms, bedrooms, beds, square_feet, price, weekly_price, monthly_price, cleaning_fee, guests_included, extra_people, review_scores_rating FROM listings;
+
+-- this SELECT returns the average_price, average_availability
+-- This will shorten the table and make it easier to join, because it is not practical to join 1.39 million calendar records 
+SELECT listing_id, ROUND(SUM(available = 't')/COUNT(available), 2) AS avg_availability, ROUND(SUM(price)/COUNT(price), 2) AS avg_price FROM calendar GROUP BY listing_id;
+
+-- this select returns the average review length and the number of reviews for every listing
+SELECT listing_id, AVG(length(comments)) AS avg_review_length, COUNT(comments) AS number_reviews FROM reviews GROUP BY listing_id;
