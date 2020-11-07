@@ -180,3 +180,10 @@ IGNORE 1 LINES
 SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2), ",", "") AS DECIMAL(10,2)));
 
 SHOW TABLES;
+
+-- ####################################################
+-- ###########			E T L 		 ##################
+-- ####################################################
+
+-- this is a prototype for average availability and average price from calendar
+SELECT listing_id, (SUM(available = 't')/COUNT(available)) AS avg_availability, SUM(price)/COUNT(price) AS avg_price FROM calendar GROUP BY listing_id;
