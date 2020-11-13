@@ -222,12 +222,13 @@ DROP TABLE IF EXISTS temp_reviews;
 CREATE TABLE temp_reviews AS
 SELECT
 	  listing_id, 
-      AVG(length(comments)) AS avg_review_length, 
+      ROUND(AVG(length(comments)), 2) AS avg_review_length, 
       COUNT(comments) AS number_reviews 
 FROM reviews 
 GROUP BY listing_id;
 
 -- this creates the data warehouse by joining the three temporary tables
+DROP TABLE IF EXISTS property_stats;
 CREATE TABLE property_stats AS
 SELECT * FROM temp_listings
 LEFT JOIN temp_calendar ON temp_listings.id = temp_calendar.listing_id
@@ -242,6 +243,7 @@ DROP TABLE IF EXISTS temp_listings;
 DROP TABLE IF EXISTS temp_calendar;
 DROP TABLE IF EXISTS temp_reviews;
 
+-- these lines are for testing
 SELECT * FROM property_stats;
 SELECT * FROM temp_reviews;
 
