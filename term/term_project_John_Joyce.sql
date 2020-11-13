@@ -179,20 +179,72 @@ IGNORE 1 LINES
 (listing_id,date,available,@v_cal_price)
 SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2), ",", "") AS DECIMAL(10,2)));
 
-SHOW TABLES;
+
 
 -- ####################################################
 -- ###########			E T L 		 ##################
 -- ####################################################
 
-DROP TABLE IF EXISTS property_stats;
+-- I create 3 temporary tables and join them in steps, because I don't know how to create the warehouse in one step
+-- with the aggregation I want to perform on calendar and reviews
 
--- this SELECT returns the columns which are good for analytics from listings
-SELECT id, name, host_is_superhost, neighbourhood_cleansed, neighbourhood_group_cleansed, property_type, room_type, accommodates, bathrooms, bedrooms, beds, square_feet, price, weekly_price, monthly_price, cleaning_fee, guests_included, extra_people, review_scores_rating FROM listings;
+-- temporary table for listings, SELECTS only the useful columns
+DROP TABLE IF EXISTS temp_listings;
+CREATE TABLE temp_listings AS
+SELECT 
+	id, 
+	name, 
+    neighbourhood_cleansed, 
+    property_type, 
+    room_type, 
+    accommodates, 
+    price, 
+    weekly_price, 
+    monthly_price, 
+    cleaning_fee, 
+    guests_included, 
+    extra_people, 
+    review_scores_rating
+FROM listings;
 
--- this SELECT returns the average_price, average_availability
--- This will shorten the table and make it easier to join, because it is not practical to join 1.39 million calendar records 
-SELECT listing_id, ROUND(SUM(available = 't')/COUNT(available), 2) AS avg_availability, ROUND(SUM(price)/COUNT(price), 2) AS avg_price FROM calendar GROUP BY listing_id;
+-- temporary table for calendar, GROUP BY reduces row count down to the same number as listings
+DROP TABLE IF EXISTS temp_calendar;
+CREATE TABLE temp_calendar AS
+SELECT
+	 listing_id,
+     ROUND(SUM(available = 't')/COUNT(available), 2) AS avg_availability, 
+     ROUND(SUM(price)/COUNT(price), 2) AS avg_price 
+FROM calendar 
+GROUP BY listing_id;
 
--- this select returns the average review length and the number of reviews for every listing
-SELECT listing_id, AVG(length(comments)) AS avg_review_length, COUNT(comments) AS number_reviews FROM reviews GROUP BY listing_id;
+-- temporary table for reviews, GROUP BY reduces row count down to the same number as listings
+DROP TABLE IF EXISTS temp_reviews;
+CREATE TABLE temp_reviews AS
+SELECT
+	  listing_id, 
+      AVG(length(comments)) AS avg_review_length, 
+      COUNT(comments) AS number_reviews 
+FROM reviews 
+GROUP BY listing_id;
+
+-- this creates the data warehouse by joining the three temporary tables
+CREATE TABLE property_stats AS
+SELECT * FROM temp_listings
+LEFT JOIN temp_calendar ON temp_listings.id = temp_calendar.listing_id
+LEFT JOIN temp_reviews USING(listing_id);
+
+-- drop a column which was used for joining, but is now useless
+ALTER TABLE property_stats
+DROP COLUMN listing_id;
+
+-- drop temporary tables
+DROP TABLE IF EXISTS temp_listings;
+DROP TABLE IF EXISTS temp_calendar;
+DROP TABLE IF EXISTS temp_reviews;
+
+SELECT * FROM property_stats;
+SELECT * FROM temp_reviews;
+
+
+
+
