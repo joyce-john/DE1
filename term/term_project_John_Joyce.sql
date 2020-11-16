@@ -188,26 +188,33 @@ SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2)
 -- I create 3 temporary tables and join them in steps, because I don't know how to create the warehouse in one step
 -- with the aggregation I want to perform on calendar and reviews
 
+DROP PROCEDURE IF EXISTS make_data_warehouse;
+
+Delimiter //
+
+CREATE PROCEDURE make_data_warehouse()
+BEGIN
+
 -- temporary table for listings, SELECTS only the useful columns
 DROP TABLE IF EXISTS temp_listings;
-CREATE TABLE temp_listings AS
-SELECT 
-	id, 
-	name, 
-    neighbourhood_cleansed, 
-    property_type, 
-    room_type, 
-    accommodates, 
-    price, 
-    weekly_price, 
-    monthly_price, 
-    cleaning_fee, 
-    guests_included, 
-    extra_people, 
-    review_scores_rating
-FROM listings;
+CREATE TABLE temp_listings AS SELECT id,
+    name,
+    neighbourhood_cleansed,
+    property_type,
+    room_type,
+    accommodates,
+    price,
+    weekly_price,
+    monthly_price,
+    cleaning_fee,
+    guests_included,
+    extra_people,
+    review_scores_rating FROM
+    listings;
 
--- temporary table for calendar, GROUP BY reduces row count down to the same number as listings
+-- temporary table for calendar, transform availability and price stats into aggregate measures
+-- GROUP BY aggregates by listing_id (specific identifier for each property)
+-- aggregation reduces number of rows from 1.4m to manageable 3.8k
 DROP TABLE IF EXISTS temp_calendar;
 CREATE TABLE temp_calendar AS
 SELECT
@@ -217,7 +224,9 @@ SELECT
 FROM calendar 
 GROUP BY listing_id;
 
--- temporary table for reviews, GROUP BY reduces row count down to the same number as listings
+-- temporary table for reviews, transform reviews into a measure of the length of the review text, count the number of reviews
+-- GROUP BY aggregates by the listing_id (specific identifier for each property)
+-- aggregation reduces number of rows from 150k to about 3.1k
 DROP TABLE IF EXISTS temp_reviews;
 CREATE TABLE temp_reviews AS
 SELECT
@@ -227,6 +236,11 @@ SELECT
 FROM reviews 
 GROUP BY listing_id;
 
+
+-- #################################################################
+-- #################	 DATA WAREHOUSE 		 ###################
+-- #################################################################
+
 -- this creates the data warehouse by joining the three temporary tables
 DROP TABLE IF EXISTS property_stats;
 CREATE TABLE property_stats AS
@@ -234,7 +248,7 @@ SELECT * FROM temp_listings
 LEFT JOIN temp_calendar ON temp_listings.id = temp_calendar.listing_id
 LEFT JOIN temp_reviews USING(listing_id);
 
--- drop a column which was used for joining, but is now useless
+-- drop a the listing_id column which was used for joining, but is now useless
 ALTER TABLE property_stats
 DROP COLUMN listing_id;
 
@@ -243,9 +257,26 @@ DROP TABLE IF EXISTS temp_listings;
 DROP TABLE IF EXISTS temp_calendar;
 DROP TABLE IF EXISTS temp_reviews;
 
+END //
+DELIMITER ;
+
+CALL make_data_warehouse();
+
 -- these lines are for testing
 SELECT * FROM property_stats;
 SELECT * FROM temp_reviews;
+
+
+-- #################################################################
+-- #################			DATA MARTS 		 ###################
+-- #################################################################
+
+
+
+
+
+
+-- ####### IMPLEMENT STORED PROCEDURE #######
 
 
 
