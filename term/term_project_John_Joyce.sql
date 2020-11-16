@@ -197,20 +197,21 @@ BEGIN
 
 -- temporary table for listings, SELECTS only the useful columns
 DROP TABLE IF EXISTS temp_listings;
-CREATE TABLE temp_listings AS SELECT id,
+CREATE TABLE temp_listings AS 
+SELECT id,
     name,
     neighbourhood_cleansed,
     property_type,
     room_type,
     accommodates,
-    price,
+    price AS nightly_price,
     weekly_price,
     monthly_price,
     cleaning_fee,
     guests_included,
     extra_people,
-    review_scores_rating FROM
-    listings;
+    review_scores_rating 
+FROM listings;
 
 -- temporary table for calendar, transform availability and price stats into aggregate measures
 -- GROUP BY aggregates by listing_id (specific identifier for each property)
@@ -220,7 +221,7 @@ CREATE TABLE temp_calendar AS
 SELECT
 	 listing_id,
      ROUND(SUM(available = 't')/COUNT(available), 2) AS avg_availability, 
-     ROUND(SUM(price)/COUNT(price), 2) AS avg_price 
+     ROUND(SUM(price)/COUNT(price), 2) AS avg_observed_price 
 FROM calendar 
 GROUP BY listing_id;
 
@@ -260,6 +261,7 @@ DROP TABLE IF EXISTS temp_reviews;
 END //
 DELIMITER ;
 
+-- call the stored procedure to generate the data warehouse
 CALL make_data_warehouse();
 
 -- these lines are for testing
@@ -271,12 +273,20 @@ SELECT * FROM temp_reviews;
 -- #################			DATA MARTS 		 ###################
 -- #################################################################
 
+DROP VIEW IF EXISTS neighborhood_analysis;
 
+CREATE VIEW neighborhood_analysis AS
+SELECT neighbourhood_cleansed AS neighborhood, 
+	ROUND(AVG(avg_observed_price), 2) AS avg_observed_price,
+	ROUND(AVG(review_scores_rating), 2) AS avg_rating,
+    ROUND(AVG(365 - (avg_availability * 365))) AS avg_nights_booked,
+    ROUND(AVG(365 - (avg_availability * 365)) * AVG(avg_observed_price)) AS avg_expected_annual_rent
+FROM property_stats
+GROUP BY neighbourhood_cleansed
+ORDER BY avg_expected_annual_rent DESC;
 
-
-
-
--- ####### IMPLEMENT STORED PROCEDURE #######
+SELECT * FROM neighborhood_analysis;
+	
 
 
 
