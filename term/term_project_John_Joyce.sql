@@ -188,11 +188,11 @@ SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2)
 -- I create 3 temporary tables and join them in steps, because I don't know how to create the warehouse in one step
 -- with the aggregation I want to perform on calendar and reviews
 
-DROP PROCEDURE IF EXISTS make_data_warehouse;
+DROP PROCEDURE IF EXISTS make_property_stats;
 
 Delimiter //
 
-CREATE PROCEDURE make_data_warehouse()
+CREATE PROCEDURE make_property_stats()
 BEGIN
 
 -- temporary table for listings, SELECTS only the useful columns
@@ -262,7 +262,7 @@ END //
 DELIMITER ;
 
 -- call the stored procedure to generate the data warehouse
-CALL make_data_warehouse();
+CALL make_property_stats();
 
 -- these lines are for testing
 SELECT * FROM property_stats;
@@ -273,10 +273,13 @@ SELECT * FROM temp_reviews;
 -- #################			DATA MARTS 		 ###################
 -- #################################################################
 
+
+-- neighborhood analysis shows the user how profitable each neighborhood is
 DROP VIEW IF EXISTS neighborhood_analysis;
 
 CREATE VIEW neighborhood_analysis AS
-SELECT neighbourhood_cleansed AS neighborhood, 
+SELECT 
+	neighbourhood_cleansed AS neighborhood, 
 	ROUND(AVG(avg_observed_price), 2) AS avg_observed_price,
 	ROUND(AVG(review_scores_rating), 2) AS avg_rating,
     ROUND(AVG(365 - (avg_availability * 365))) AS avg_nights_booked,
@@ -286,6 +289,25 @@ GROUP BY neighbourhood_cleansed
 ORDER BY avg_expected_annual_rent DESC;
 
 SELECT * FROM neighborhood_analysis;
+
+
+DROP VIEW IF EXISTS popular_properties;
+
+CREATE VIEW popular_properties AS
+SELECT 
+	name, 
+    neighbourhood_cleansed AS neighborhood, 
+    property_type, 
+    avg_availability, 
+    number_reviews
+FROM property_stats
+WHERE avg_availability < 0.7 AND number_reviews > 50
+ORDER BY number_reviews DESC;
+
+SELECT * FROM popular_properties;
+
+
+
 	
 
 
