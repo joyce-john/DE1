@@ -7,7 +7,7 @@ USE airbnb;
 -- primary key: id
 DROP TABLE IF EXISTS listings;
 
--- columns marked with a * require a SET COLUMN = NULLIF(@VAR = '') statement + a @v_column variable import...
+-- columns marked with a * comment require a SET COLUMN = NULLIF(@VAR = '') statement + a @v_column variable import...
 -- ...during the LOAD DATA IN FILE call
 CREATE TABLE listings
 (id INT,
@@ -61,7 +61,7 @@ is_location_exact VARCHAR(1),
 property_type VARCHAR(255),
 room_type VARCHAR(255),
 accommodates INT,
-bathrooms DOUBLE, -- DOUBLE later to allow for values like 3.5 *
+bathrooms DOUBLE, -- DOUBLE to allow for values like 3.5 *
 bedrooms INT, -- *
 beds INT, -- *
 bed_type VARCHAR(255),
@@ -198,7 +198,8 @@ BEGIN
 -- temporary table for listings, SELECTS only the useful columns
 DROP TABLE IF EXISTS temp_listings;
 CREATE TABLE temp_listings AS 
-SELECT id,
+SELECT 
+	id,
     name,
     neighbourhood_cleansed,
     property_type,
@@ -274,7 +275,7 @@ SELECT * FROM temp_reviews;
 -- #################################################################
 
 
--- neighborhood analysis shows the user how profitable each neighborhood is
+-- neighborhood analysis describes how profitable each neighborhood is
 DROP VIEW IF EXISTS neighborhood_analysis;
 
 CREATE VIEW neighborhood_analysis AS
@@ -291,10 +292,13 @@ ORDER BY avg_expected_annual_rent DESC;
 SELECT * FROM neighborhood_analysis;
 
 
+-- popular_properties shows the most popular properties based on the number of reviews
+-- it only considers properties which are available less than 70% of the year and have more than 50 reviews
 DROP VIEW IF EXISTS popular_properties;
 
 CREATE VIEW popular_properties AS
 SELECT 
+	id,
 	name, 
     neighbourhood_cleansed AS neighborhood, 
     property_type, 
@@ -307,7 +311,22 @@ ORDER BY number_reviews DESC;
 SELECT * FROM popular_properties;
 
 
+DROP VIEW IF EXISTS value_for_groups;
 
+-- CREATE VIEW recommded for groups
+SELECT * FROM property_stats;
+SELECT
+id,
+name,
+accommodates,
+nightly_price, 
+cleaning_fee,
+guests_included,
+extra_people,
+ROUND((nightly_price + ((accommodates - guests_included) * extra_people) + (cleaning_fee))/accommodates, 2) AS price_per_person_per_night
+FROM property_stats;
+
+-- provide and argument to this view, or decide on a group size (e.g. 4) for calculations
 	
 
 
