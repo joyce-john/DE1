@@ -101,8 +101,7 @@ cancellation_policy VARCHAR(255),
 require_guest_profile_picture VARCHAR(1),
 require_guest_phone_verification VARCHAR(1),
 calculated_host_listings_count INT,
-reviews_per_month DECIMAL(10,2),
-PRIMARY KEY (id)); -- *
+reviews_per_month DECIMAL(10,2)); -- *
 
 
 -- load data into listings table
@@ -151,8 +150,7 @@ id INT,
 date DATE,
 reviewer_id INT,
 reviewer_name VARCHAR(255),
-comments TEXT,
-CONSTRAINT fk_reviews FOREIGN KEY (listing_id) REFERENCES listings (id));
+comments TEXT);
 
 -- load reviews data into table
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\reviews.csv'
@@ -170,10 +168,9 @@ CREATE TABLE calendar
 (listing_id INT,
 date DATE,
 available VARCHAR(1),
-price DECIMAL(10,2),
-CONSTRAINT fk_calendar FOREIGN KEY (listing_id) REFERENCES listings (id));
+price DECIMAL(10,2));
 
--- load data into calendar table, this could take a little while (20 seconds on my laptop) OR two minutes if key checks are enabled
+-- load data into calendar table, this could take a little while (10-20 seconds on my laptop)
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\calendar.csv'
 INTO TABLE calendar
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
@@ -181,6 +178,13 @@ LINES TERMINATED BY '\n'
 IGNORE 1 LINES
 (listing_id,date,available,@v_cal_price)
 SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2), ",", "") AS DECIMAL(10,2)));
+
+
+-- setting keys for the tables
+-- WARNING: this is slow, could take 2+ minutes
+ALTER TABLE listings ADD CONSTRAINT pk_listings PRIMARY KEY (id); 
+ALTER TABLE reviews ADD CONSTRAINT fk_reviews FOREIGN KEY (listing_id) REFERENCES listings (id);
+ALTER TABLE calendar ADD CONSTRAINT fk_calendar FOREIGN KEY (listing_id) REFERENCES listings (id);
 
 
 -- ####################################################
@@ -265,9 +269,6 @@ DELIMITER ;
 -- call the stored procedure to generate the data warehouse
 CALL make_property_stats();
 
--- these lines are for testing
-SELECT * FROM property_stats;
-SELECT * FROM temp_reviews;
 
 
 -- #################################################################
