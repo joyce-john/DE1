@@ -101,7 +101,8 @@ cancellation_policy VARCHAR(255),
 require_guest_profile_picture VARCHAR(1),
 require_guest_phone_verification VARCHAR(1),
 calculated_host_listings_count INT,
-reviews_per_month DECIMAL(10,2)); -- *
+reviews_per_month DECIMAL(10,2),
+PRIMARY KEY (id)); -- *
 
 
 -- load data into listings table
@@ -141,7 +142,7 @@ reviews_per_month = NULLIF(@v_reviews_per_month, '')
 
 
 -- create reviews table
--- linking vars: listing_id, id
+-- foreign key "listing_id" refers to listings table "id" column
 DROP TABLE IF EXISTS reviews;
 
 CREATE TABLE reviews
@@ -150,7 +151,8 @@ id INT,
 date DATE,
 reviewer_id INT,
 reviewer_name VARCHAR(255),
-comments TEXT);
+comments TEXT,
+CONSTRAINT reviews_fk FOREIGN KEY (listing_id) REFERENCES listings (id));
 
 -- load reviews data into table
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\reviews.csv'
@@ -161,14 +163,15 @@ IGNORE 1 LINES
 (listing_id,id,date,reviewer_id,reviewer_name,comments);
 
 -- create calendar table
--- linking vars: listing_id
+-- foreign key "listing_id" refers to listings table "id" column
 DROP TABLE IF EXISTS calendar;
 
 CREATE TABLE calendar
 (listing_id INT,
 date DATE,
 available VARCHAR(1),
-price DECIMAL(10,2));
+price DECIMAL(10,2),
+CONSTRAINT calendar_fk FOREIGN KEY (listing_id) REFERENCES listings (id));
 
 -- load data into calendar table, this could take a little while (20 seconds on my laptop)
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\calendar.csv'
@@ -179,7 +182,9 @@ IGNORE 1 LINES
 (listing_id,date,available,@v_cal_price)
 SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2), ",", "") AS DECIMAL(10,2)));
 
-
+SET GLOBAL connect_timeout = 120;
+SET GLOBAL interactive_timeout = 120;
+SET GLOBAL wait_timeout = 120;
 
 -- ####################################################
 -- ###########			E T L 		 ##################
@@ -313,8 +318,7 @@ SELECT * FROM popular_properties;
 
 DROP VIEW IF EXISTS value_for_groups;
 
--- CREATE VIEW recommded for groups
-SELECT * FROM property_stats;
+CREATE VIEW value_for_groups AS
 SELECT
 id,
 name,
@@ -324,10 +328,17 @@ cleaning_fee,
 guests_included,
 extra_people,
 ROUND((nightly_price + ((accommodates - guests_included) * extra_people) + (cleaning_fee))/accommodates, 2) AS price_per_person_per_night
-FROM property_stats;
+FROM property_stats
+ORDER BY price_per_person_per_night ASC;
 
--- provide and argument to this view, or decide on a group size (e.g. 4) for calculations
-	
+-- use the view with WHERE accommodates = ... to find properties that offer strong value to groups of that size
+SELECT * FROM value_for_groups WHERE accommodates = 10;
+
+-- RECONSIDER THIS BECAUSE THE CLEANING FEE IS NOT CHARGED NIGHTLY
+-- MAYBE MAKE THIS VIEW SIMULATE A WEEKEND (2-3 NIGHT) STAY
+-- OR SOMEHOW ACCOUNT FOR THIS IN THE DOCUMENTATION
+
+
 
 
 
