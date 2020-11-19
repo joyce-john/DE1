@@ -3,7 +3,7 @@ DROP SCHEMA IF EXISTS airbnb;
 CREATE SCHEMA airbnb;
 USE airbnb;
 
--- create schema for listings, which has 92 columns
+-- create table for listings, which has 92 columns
 -- primary key: id
 DROP TABLE IF EXISTS listings;
 
@@ -106,7 +106,7 @@ PRIMARY KEY (id)); -- *
 
 
 -- load data into listings table
--- for PRICE columns, the logic works like this: IF it is a missing value, THEN NULL, ELSE use SUBSTRING to truncate the "$", and REPLACE TO remove any commas, and CAST to decimal
+-- for PRICE columns, the logic works like this: IF it is a missing value, THEN NULL, ELSE use SUBSTRING to truncate the "$", and REPLACE to remove any commas, and CAST to decimal
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\listings.csv'
 INTO TABLE listings
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
@@ -152,7 +152,7 @@ date DATE,
 reviewer_id INT,
 reviewer_name VARCHAR(255),
 comments TEXT,
-CONSTRAINT reviews_fk FOREIGN KEY (listing_id) REFERENCES listings (id));
+CONSTRAINT fk_reviews FOREIGN KEY (listing_id) REFERENCES listings (id));
 
 -- load reviews data into table
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\reviews.csv'
@@ -171,9 +171,9 @@ CREATE TABLE calendar
 date DATE,
 available VARCHAR(1),
 price DECIMAL(10,2),
-CONSTRAINT calendar_fk FOREIGN KEY (listing_id) REFERENCES listings (id));
+CONSTRAINT fk_calendar FOREIGN KEY (listing_id) REFERENCES listings (id));
 
--- load data into calendar table, this could take a little while (20 seconds on my laptop)
+-- load data into calendar table, this could take a little while (20 seconds on my laptop) OR two minutes if key checks are enabled
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\calendar.csv'
 INTO TABLE calendar
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
@@ -182,9 +182,6 @@ IGNORE 1 LINES
 (listing_id,date,available,@v_cal_price)
 SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2), ",", "") AS DECIMAL(10,2)));
 
-SET GLOBAL connect_timeout = 120;
-SET GLOBAL interactive_timeout = 120;
-SET GLOBAL wait_timeout = 120;
 
 -- ####################################################
 -- ###########			E T L 		 ##################
@@ -219,7 +216,7 @@ SELECT
     review_scores_rating 
 FROM listings;
 
--- temporary table for calendar, transform availability and price stats into aggregate measures
+-- temporary table for calendar, transform availability and price stats into aggregate measures for the whole year
 -- GROUP BY aggregates by listing_id (specific identifier for each property)
 -- aggregation reduces number of rows from 1.4m to manageable 3.8k
 DROP TABLE IF EXISTS temp_calendar;
@@ -244,9 +241,7 @@ FROM reviews
 GROUP BY listing_id;
 
 
--- #################################################################
--- #################	 DATA WAREHOUSE 		 ###################
--- #################################################################
+-- #################	 DATA WAREHOUSE 	 ###################
 
 -- this creates the data warehouse by joining the three temporary tables
 DROP TABLE IF EXISTS property_stats;
@@ -281,8 +276,8 @@ SELECT * FROM temp_reviews;
 
 
 -- neighborhood analysis describes how profitable each neighborhood is
+-- "average expected annual rent" is a basic prediction of revenue: (number of nights booked) * (average price throughout the year)
 DROP VIEW IF EXISTS neighborhood_analysis;
-
 CREATE VIEW neighborhood_analysis AS
 SELECT 
 	neighbourhood_cleansed AS neighborhood, 
@@ -294,13 +289,13 @@ FROM property_stats
 GROUP BY neighbourhood_cleansed
 ORDER BY avg_expected_annual_rent DESC;
 
+-- use the view to examine all neighborhoods
 SELECT * FROM neighborhood_analysis;
 
 
 -- popular_properties shows the most popular properties based on the number of reviews
 -- it only considers properties which are available less than 70% of the year and have more than 50 reviews
 DROP VIEW IF EXISTS popular_properties;
-
 CREATE VIEW popular_properties AS
 SELECT 
 	id,
@@ -313,21 +308,24 @@ FROM property_stats
 WHERE avg_availability < 0.7 AND number_reviews > 50
 ORDER BY number_reviews DESC;
 
+-- use the view to see which properties are popular
 SELECT * FROM popular_properties;
 
 
+-- value_for_groups find properties that may interest a large group traveling together
+-- it calculates the price for each person after all fees
+-- this view uses the most recent listed price "nightly_price" because the view is meant for making current recommendations
 DROP VIEW IF EXISTS value_for_groups;
-
 CREATE VIEW value_for_groups AS
 SELECT
-id,
-name,
-accommodates,
-nightly_price, 
-cleaning_fee,
-guests_included,
-extra_people,
-ROUND((nightly_price + ((accommodates - guests_included) * extra_people) + (cleaning_fee))/accommodates, 2) AS price_per_person_per_night
+	id,
+	name,
+	accommodates,
+	nightly_price, 
+	cleaning_fee,
+	guests_included,
+	extra_people,
+	ROUND((nightly_price + ((accommodates - guests_included) * extra_people) + (cleaning_fee))/accommodates, 2) AS price_per_person_per_night
 FROM property_stats
 ORDER BY price_per_person_per_night ASC;
 
