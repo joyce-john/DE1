@@ -48,7 +48,7 @@ As an example, see this snapshot of the aggregation on **calendars**:
 ![creation of avg_availability column](https://github.com/joyce-john/DE1/blob/master/term/screenshots/ETL_calendar_transform.jpg)
 
 
-4. The extracted and transformed data is loaded into a data warehouse called **property stats**.
+4. The extracted and transformed data is loaded into a data warehouse called **property_stats**.
 
 5. Temporary tables are dropped.
 
