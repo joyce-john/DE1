@@ -30,9 +30,8 @@ The project creates an analytical layer which can be used for general analysis, 
 
 As an example, see this snapshot of the aggregation on **calendars**:
 
-![creation of avg_availability column](term/screenshots/ETL_calendar_transform.jpg)
+![creation of avg_availability column](/screenshots/ETL_calendar_transform.jpg)
 
- This is particularly helpful for **avg_observed_price**, an observation of the average price for a property as it fluctuates through the year. 
 
 4. The extracted and transformed data is loaded into a data warehouse called **property stats**.
 
