@@ -1,5 +1,15 @@
 ## Term Project
 
+### Notes for the Grader
+
+File paths for loading data are on these lines:
++ **Line 113**: listings.csv
++ **Line 160**: reviews.csv
++ **Line 179**: calendar.csv
+
+Additionally, you may want to comment out this line of code, which can take two minutes to run.
++ **Line 192**: adding foreign key constraints
+
 ### Overview
 
 This project analyzes the 2016 Seattle AirBnB market using data provided by AirBnB's official Kaggle account. You can view the data at its original source here:
