@@ -30,7 +30,7 @@ The project creates an analytical layer which can be used for general analysis, 
 
 As an example, see this snapshot of the aggregation on **calendars**:
 
-![creation of avg_availability column](/screenshots/ETL_calendar_transform.jpg)
+![creation of avg_availability column](https://github.com/joyce-john/DE1/tree/master/term/screenshots)
 
 
 4. The extracted and transformed data is loaded into a data warehouse called **property stats**.
