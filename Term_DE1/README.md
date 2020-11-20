@@ -26,7 +26,7 @@ The dataset provided by AirBnB contains three tables:
 
 The database structure is straightforward:
 
-![Database Diagram](/term/ERD_airbnb_seattle.png)
+![Database Diagram](/Term_DE1/ERD_airbnb_seattle.png)
 
 
 ### Analytics Plan
@@ -45,7 +45,7 @@ The analytical layer is created with the following process:
 
 As an example, see this snapshot of the aggregation on **calendars**:
 
-![creation of avg_availability column](https://github.com/joyce-john/DE1/blob/master/term/screenshots/ETL_calendar_transform.jpg)
+![creation of avg_availability column](https://github.com/joyce-john/DE1/blob/master/Term_DE1/screenshots/ETL_calendar_transform.jpg)
 
 
 4. The extracted and transformed data is loaded into a data warehouse called **property_stats**.
@@ -57,7 +57,7 @@ As an example, see this snapshot of the aggregation on **calendars**:
 
 Below is a graphical summary of the process:
 
-![analytics_plan](https://github.com/joyce-john/DE1/blob/master/term/analytics_plan.png)
+![analytics_plan](https://github.com/joyce-john/DE1/blob/master/Term_DE1/analytics_plan.png)
 
 
 ### Data Mart Examples
@@ -66,13 +66,13 @@ Below is a graphical summary of the process:
 
 The **neighborhood_analysis** view provides key information about the profitability of different neighborhoods in Seattle. One column in the view is **avg_expected_annual_rent**, which is a basic summary calculated from the average number of nights booked and the average price throughout the year. It is sorted by **avg_expected_annual_rent** in descending order, as most users will be interested in finding the most profitable place to run an AirBnB, or seeing how their own property stacks up against other parts of the city.
 
-![neighborhood_analysis](https://github.com/joyce-john/DE1/blob/master/term/screenshots/neighborhood_analysis_view.jpg)
+![neighborhood_analysis](https://github.com/joyce-john/DE1/blob/master/Term_DE1/screenshots/neighborhood_analysis_view.jpg)
 
 
 
 The **popular_properties** view provides information about the most popular individual properties in Seattle. Properties included in the view are available less than 70% of the year have a minimum of 50 reviews. The view offers key facts such as the type of property, the neighborhood its located in, and how popular the property is in terms of availability and reviews.
 
-![popular_properties](https://github.com/joyce-john/DE1/blob/master/term/screenshots/popular_properties_view.jpg)
+![popular_properties](https://github.com/joyce-john/DE1/blob/master/Term_DE1/screenshots/popular_properties_view.jpg)
 
 
 
@@ -81,9 +81,9 @@ The **value_for_groups** view returns properties which are capable of accomodati
 Users should run this query with a **WHERE accommodates =** condition to specify their group size.
 
 
-![value_for_groups_query](https://github.com/joyce-john/DE1/blob/master/term/screenshots/value_for_groups_query.jpg)
+![value_for_groups_query](https://github.com/joyce-john/DE1/blob/master/Term_DE1/screenshots/value_for_groups_query.jpg)
 
-![value_for_groups_view](https://github.com/joyce-john/DE1/blob/master/term/screenshots/value_for_groups_view.jpg)
+![value_for_groups_view](https://github.com/joyce-john/DE1/blob/master/Term_DE1/screenshots/value_for_groups_view.jpg)
 
 	
 
