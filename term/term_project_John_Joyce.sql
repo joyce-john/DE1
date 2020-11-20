@@ -1,14 +1,18 @@
+-- ####################################################
+-- ###########		LOADING DATA	 ##################
+-- ####################################################
+
 -- create and use the schema
 DROP SCHEMA IF EXISTS airbnb;
 CREATE SCHEMA airbnb;
 USE airbnb;
 
 -- create table for listings, which has 92 columns
--- primary key: id
+-- later add primary key: id
 DROP TABLE IF EXISTS listings;
 
 -- columns marked with a * comment require a SET COLUMN = NULLIF(@VAR = '') statement + a @v_column variable import...
--- ...during the LOAD DATA IN FILE call
+-- ...during the LOAD DATA IN FILE call to deal with missing values
 CREATE TABLE listings
 (id INT,
 listing_url VARCHAR(255),
@@ -105,7 +109,7 @@ reviews_per_month DECIMAL(10,2)); -- *
 
 
 -- load data into listings table
--- for PRICE columns, the logic works like this: IF it is a missing value, THEN NULL, ELSE use SUBSTRING to truncate the "$", and REPLACE to remove any commas, and CAST to decimal
+-- for PRICE columns, the logic works like this: IF it is a missing value, THEN NULL or 0, ELSE use SUBSTRING to truncate the "$", and REPLACE to remove any commas, and CAST to decimal
 LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\listings.csv'
 INTO TABLE listings
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' -- some user-submitted text contains commas
@@ -141,7 +145,7 @@ reviews_per_month = NULLIF(@v_reviews_per_month, '')
 
 
 -- create reviews table
--- foreign key "listing_id" refers to listings table "id" column
+-- later add foreign key "listing_id" which refers to listings table "id" column
 DROP TABLE IF EXISTS reviews;
 
 CREATE TABLE reviews
@@ -160,8 +164,9 @@ LINES TERMINATED BY '\n'
 IGNORE 1 LINES
 (listing_id,id,date,reviewer_id,reviewer_name,comments);
 
+
 -- create calendar table
--- foreign key "listing_id" refers to listings table "id" column
+-- later add foreign key "listing_id" which refers to listings table "id" column
 DROP TABLE IF EXISTS calendar;
 
 CREATE TABLE calendar
@@ -184,15 +189,16 @@ SET price = IF(@v_cal_price = '', NULL,  CAST(REPLACE(SUBSTRING(@v_cal_price, 2)
 -- WARNING: this is slow, could take 2+ minutes
 ALTER TABLE listings ADD CONSTRAINT pk_listings PRIMARY KEY (id); 
 ALTER TABLE reviews ADD CONSTRAINT fk_reviews FOREIGN KEY (listing_id) REFERENCES listings (id);
-ALTER TABLE calendar ADD CONSTRAINT fk_calendar FOREIGN KEY (listing_id) REFERENCES listings (id);
+ALTER TABLE calendar ADD CONSTRAINT fk_calendar FOREIGN KEY (listing_id) REFERENCES listings (id); -- this is the slow part
 
 
 -- ####################################################
 -- ###########			E T L 		 ##################
 -- ####################################################
 
--- I create 3 temporary tables and join them in steps, because I don't know how to create the warehouse in one step
--- with the aggregation I want to perform on calendar and reviews
+-- the ETL is a stored procedure
+-- I create 3 temporary tables and join them in steps, because I don't know how to create the warehouse in one step...
+-- ...with the aggregation I want to perform on calendar and reviews
 
 DROP PROCEDURE IF EXISTS make_property_stats;
 
@@ -315,7 +321,7 @@ SELECT * FROM popular_properties;
 
 -- value_for_groups find properties that may interest a large group traveling together
 -- it calculates the price for each person after all fees
--- this view uses the most recent listed price "nightly_price" because the view is meant for making current recommendations
+-- this view uses the most recent listed price "nightly_price" so the view can be used for making current recommendations
 DROP VIEW IF EXISTS value_for_groups;
 CREATE VIEW value_for_groups AS
 SELECT
@@ -332,12 +338,6 @@ ORDER BY price_per_person_per_night ASC;
 
 -- use the view with WHERE accommodates = ... to find properties that offer strong value to groups of that size
 SELECT * FROM value_for_groups WHERE accommodates = 10;
-
--- RECONSIDER THIS BECAUSE THE CLEANING FEE IS NOT CHARGED NIGHTLY
--- MAYBE MAKE THIS VIEW SIMULATE A WEEKEND (2-3 NIGHT) STAY
--- OR SOMEHOW ACCOUNT FOR THIS IN THE DOCUMENTATION
-
-
 
 
 
