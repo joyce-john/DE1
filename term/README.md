@@ -45,25 +45,32 @@ As an example, see this snapshot of the aggregation on **calendars**:
 6. Data marts are created as Views from **property_stats**.
 
 
+Below is a graphical summary of the process:
+
+![analytics_plan](https://github.com/joyce-john/DE1/blob/master/term/analytics_plan.png)
+
+
 ### Data Mart Examples
 
-#### **neighborhood_analysis**
 
-The **neighborhood_analysis** view provides key information about the profitability of different neighborhoods in Seattle. One column in the view is **avg_expected_annual_rent**, which is a basic summary calculated from the average number of nights booked and the average price through the year. It is sorted by **avg_expected_annual_rent** in descending order, as most users will be interested in finding the most profitable place to run an AirBnB, or seeing how their own property stacks up against other parts of the city.
+
+The **neighborhood_analysis** view provides key information about the profitability of different neighborhoods in Seattle. One column in the view is **avg_expected_annual_rent**, which is a basic summary calculated from the average number of nights booked and the average price throughout the year. It is sorted by **avg_expected_annual_rent** in descending order, as most users will be interested in finding the most profitable place to run an AirBnB, or seeing how their own property stacks up against other parts of the city.
 
 ![neighborhood_analysis](https://github.com/joyce-john/DE1/blob/master/term/screenshots/neighborhood_analysis_view.jpg)
 
-#### **popular_properties**
 
-The **popular_properties** view provides information about the most popular individual properties in Seattle. Properties included in the view are available less than 70% of the year have a minimum of 50 reviews. The view offers key facts suhc as the type of property, the neighborhood its located in, and how the property is in terms of availability and reviews.
+
+The **popular_properties** view provides information about the most popular individual properties in Seattle. Properties included in the view are available less than 70% of the year have a minimum of 50 reviews. The view offers key facts such as the type of property, the neighborhood its located in, and how popular the property is in terms of availability and reviews.
 
 ![popular_properties](https://github.com/joyce-john/DE1/blob/master/term/screenshots/popular_properties_view.jpg)
 
-#### **value_for_groups**
+
 
 The **value_for_groups** view returns properties which are capable of accomodating groups of a particular size. More importantly, it provides an estimate of the cost per person for a one-night stay, including fees (as **price_per_person_per_night**). Groups can offer property owners large nightly rents, but decision-makers for large groups tend to be sensitive to the overall cost of a booking. Landlords with large properties need to consider how much value their property offers a large group compared to the competition.   
 
 Users should run this query with a **WHERE accommodates =** condition to specify their group size.
+
+
 ![value_for_groups_query](https://github.com/joyce-john/DE1/blob/master/term/screenshots/value_for_groups_query.jpg)
 
 ![value_for_groups_view](https://github.com/joyce-john/DE1/blob/master/term/screenshots/value_for_groups_view.jpg)
